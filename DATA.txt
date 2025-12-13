@@ -1,0 +1,2 @@
+Xin chào từ Kotlin!
+Đây là nội dung ghi vào file.

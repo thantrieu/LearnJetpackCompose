@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Nhạc Của Tôi</string>
+    <string name="menu_item_settings">Cài đặt</string>
+    <string name="menu_item_dark_mode">Giao diện tối</string>
+</resources>
