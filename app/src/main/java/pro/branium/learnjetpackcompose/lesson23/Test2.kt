@@ -7,8 +7,11 @@ class Test2 {
     // cách 2: sử dụng git switch -c [tên nhánh]
 
     fun hello() {
-        val message = "hello"
+        val message = "hello fdsa;lfsjdh"
         val age = 23
         val gpa = 3.33f
+        val isTrue = true
+        val isFalse = false
+//        fsdaflsadf/
     }
 }
