@@ -22,6 +22,10 @@ class SongViewModel @Inject constructor(
     private val _songsState = MutableStateFlow<ApiResult<List<Song>>>(ApiResult.Loading)
     private val _albumsState = MutableStateFlow<ApiResult<List<Album>>>(ApiResult.Loading)
 
+    private val _selectedSong = MutableStateFlow<Song?>(null)
+    val selectedSong: StateFlow<Song?>
+        get() = _selectedSong
+
     val songsState: StateFlow<ApiResult<List<Song>>>
         get() = _songsState
 
@@ -32,7 +36,6 @@ class SongViewModel @Inject constructor(
         fetchSongs()
     }
 
-
     fun fetchSongs() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -40,6 +43,21 @@ class SongViewModel @Inject constructor(
                 _albumsState.value = getLimitedAlbumUseCase(100, 0)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun getSongById(songId: String?) {
+        viewModelScope.launch {
+            if (songId != null) {
+                val songs = _songsState.value
+                val songData = if (songs is ApiResult.Success) {
+                    songs.data
+                } else {
+                    emptyList()
+                }
+                val searchedSong = songData.find { it.id == songId }
+                _selectedSong.value = searchedSong
             }
         }
     }

@@ -15,4 +15,9 @@ class Test2 {
         // do something....
 //        fsdaflsadf/
     }
+    // fdàhsadfhksjàhídkàhsd
+//    112222
 }
+
+// clone -> pull -> add -> commit -> commit amend -> switch/checkout -> push -> fetch/pull -> rebase/merge
+// git switch -c, git checkout -b -> checkout -> stash/path -> stash pop/apply -> stash list

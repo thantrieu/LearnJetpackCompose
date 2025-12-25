@@ -72,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import pro.branium.learnjetpackcompose.R
@@ -107,9 +108,10 @@ fun SetStatusBarColor(
 @Composable
 fun SongListScreen(
     isDark: Boolean = false,
+    navController: NavController,
+    songViewModel: SongViewModel,
     onDarkThemeChanged: (Boolean) -> Unit = {}
 ) {
-    val songViewModel: SongViewModel = hiltViewModel()
     val songResult by songViewModel.songsState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -242,7 +244,7 @@ fun SongListScreen(
                                 key = { index -> songs[index].id }
                             ) { index ->
                                 val song = songs[index]
-                                SongItem(song)
+                                SongItem(song, navController)
                                 if (index < songs.size - 1) {
                                     HorizontalDivider()
                                 }
@@ -354,7 +356,7 @@ fun LanguageDrawerItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongItem(song: Song) {
+fun SongItem(song: Song, navController: NavController) {
     var showBottomSheet by remember { mutableStateOf(false) }
 
     Row(
@@ -362,6 +364,7 @@ fun SongItem(song: Song) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable {
+                navController.navigate("details/${song.id}")
             }) {
         AsyncImage(
             modifier = Modifier

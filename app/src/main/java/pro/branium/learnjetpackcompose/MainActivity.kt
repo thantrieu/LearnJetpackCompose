@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.flowWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import pro.branium.learnjetpackcompose.lesson20.navigation.AppNavigation
 import pro.branium.learnjetpackcompose.lesson20.ui.SongListScreen
 import pro.branium.learnjetpackcompose.lesson20.viewmodel.ThemeViewModel
 import pro.branium.learnjetpackcompose.ui.theme.AppTheme
@@ -32,7 +33,7 @@ class MainActivity : ComponentActivity() {
             }
 
             AppTheme(darkTheme = isDarkTheme, dynamicColor = false) {
-                SongListScreen(isDarkTheme, onDarkThemeChanged)
+                AppNavigation(isDarkTheme, onDarkThemeChanged)
             }
         }
     }
