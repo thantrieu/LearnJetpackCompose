@@ -17,6 +17,7 @@ import pro.branium.learnjetpackcompose.lesson20.utils.Action
 class MusicService : Service() {
     private lateinit var player: ExoPlayer
     private var isForeground = false
+    private var lastSourceUrl: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -29,7 +30,7 @@ class MusicService : Service() {
             val channel = NotificationChannel(
                 MUSIC_CHANNEL_ID,
                 "Music Playback",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
@@ -42,8 +43,24 @@ class MusicService : Service() {
         when (intent?.action) {
 
             Action.PLAY.name -> {
-                val sourceUrl = intent.getStringExtra("sourceUrl")
-                sourceUrl?.let { play(it) }
+                // Ưu tiên lấy sourceUrl từ intent, nếu không có thì dùng lastSourceUrl
+                val sourceUrl = intent.getStringExtra("sourceUrl") ?: lastSourceUrl
+
+                if (sourceUrl != null) {
+                    // Nếu chưa có media hoặc URL khác bài hiện tại -> set media và play
+                    val needSetMedia =
+                        player.mediaItemCount == 0 ||
+                                lastSourceUrl == null ||
+                                lastSourceUrl != sourceUrl
+
+                    if (needSetMedia) {
+                        lastSourceUrl = sourceUrl
+                        playNew(sourceUrl)
+                    } else {
+                        // Đã có media item rồi -> resume
+                        player.play()
+                    }
+                }
 
                 if (!isForeground) {
                     startForeground(
@@ -89,8 +106,14 @@ class MusicService : Service() {
                 if (isPlaying) "Pause" else "Play",
                 playPausePendingIntent(isPlaying)
             )
-            .setOngoing(true) // vẫn là foreground
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(isPlaying) // vẫn là foreground
             .setOnlyAlertOnce(true)
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(0)
+
+            )
             .build()
     }
 
@@ -113,8 +136,7 @@ class MusicService : Service() {
         )
     }
 
-
-    private fun play(sourceUrl: String) {
+    private fun playNew(sourceUrl: String) {
         val mediaItem = MediaItem.fromUri(sourceUrl)
         player.setMediaItem(mediaItem)
         player.prepare()
@@ -130,15 +152,6 @@ class MusicService : Service() {
         player.stop()
         stopSelf()
     }
-
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, MUSIC_CHANNEL_ID)
-            .setContentTitle("Playing music")
-            .setSmallIcon(R.drawable.ic_song)
-            .setOngoing(true)
-            .build()
-    }
-
 
     override fun onDestroy() {
         super.onDestroy()
