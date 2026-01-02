@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import pro.branium.learnjetpackcompose.R
 import pro.branium.learnjetpackcompose.lesson20.utils.Action
@@ -23,6 +24,20 @@ class MusicService : Service() {
         super.onCreate()
         player = ExoPlayer.Builder(this).build()
         createNotificationChannel()
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                publishPlaybackState()
+            }
+        })
+    }
+
+    private fun publishPlaybackState() {
+        val intent = Intent(ACTION_PLAYBACK_STATE).apply {
+            setPackage(packageName) // giới hạn broadcast trong app
+            putExtra(EXTRA_IS_PLAYING, player.isPlaying)
+        }
+        sendBroadcast(intent)
     }
 
     private fun createNotificationChannel() {
@@ -161,5 +176,7 @@ class MusicService : Service() {
     companion object {
         const val MUSIC_CHANNEL_ID = "music_playback"
         const val MUSIC_NOTIFICATION_ID = 1001
+        const val EXTRA_IS_PLAYING = "extra_is_playing"
+        const val ACTION_PLAYBACK_STATE = "app.playback.STATE_CHANGED"
     }
 }
