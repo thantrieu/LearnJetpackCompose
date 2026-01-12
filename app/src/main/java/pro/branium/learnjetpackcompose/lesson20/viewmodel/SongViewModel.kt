@@ -32,9 +32,9 @@ class SongViewModel @Inject constructor(
     val albumsState: StateFlow<ApiResult<List<Album>>>
         get() = _albumsState
 
-    init {
-        fetchSongs()
-    }
+//    init {
+//        fetchSongs()
+//    }
 
     fun fetchSongs() {
         viewModelScope.launch(Dispatchers.IO) {
