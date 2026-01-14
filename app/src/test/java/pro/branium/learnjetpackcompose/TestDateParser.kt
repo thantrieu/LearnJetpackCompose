@@ -13,4 +13,10 @@ class TestDateParser {
         val actual = dateToString(date)
         assertEquals(expected, actual)
     }
+
+    // quy tắc viết testcase:
+    /**
+     * 1. mỗi một test == 1 hàm
+     * 2. test các trường hợp biên.
+     */
 }

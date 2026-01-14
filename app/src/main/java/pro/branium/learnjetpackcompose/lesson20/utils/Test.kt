@@ -9,3 +9,16 @@ fun dateToString(date: Date?): String {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return dateFormat.format(date)
 }
+
+fun divide(a: Int, b: Int): Float {
+    // b! = 0 => a = 0, > 0, < 0
+    // b = 0 => a != 0, a == 0
+    if(b != 0) return a * 1.0f / b
+    else if(a == 0) {
+        return Float.NEGATIVE_INFINITY
+    } else {
+        throw Exception("Lỗi chia cho 0")
+    }
+}
+
+fun add(a: Int, b: Int) = a + b
