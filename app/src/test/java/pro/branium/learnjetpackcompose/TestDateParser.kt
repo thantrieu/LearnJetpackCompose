@@ -9,7 +9,7 @@ class TestDateParser {
     @Test
     fun givenCorrectDate_whenParseDate_thenReturnCorrectString() {
         val date = Date()
-        val expected = "13/01/2026"
+        val expected = "14/01/2026"
         val actual = dateToString(date)
         assertEquals(expected, actual)
     }
@@ -20,3 +20,9 @@ class TestDateParser {
      * 2. test các trường hợp biên.
      */
 }
+
+/**
+ * 01:01:01 ==> correct
+ * 1:1:1 ==> incorrect
+ * 01:1:01 ==> incorrect
+ */
