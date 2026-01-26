@@ -1,16 +1,22 @@
 package pro.branium.learnjetpackcompose
 
+import android.content.Context
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.ComposeNavigator
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +30,7 @@ import pro.branium.learnjetpackcompose.lesson20.ui.showSongList
 @RunWith(AndroidJUnit4::class)
 class LazyColumnTest {
     private lateinit var fakeData: List<Song>
+    lateinit var navController: TestNavHostController
 
     @Before
     fun setup() {
@@ -161,14 +168,11 @@ class LazyColumnTest {
                 trackNumber = 5
             )
         )
-        navController = TestNavHostController(
-            ApplicationProvider.getApplicationContext()
-        ).apply {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        navController = TestNavHostController(context).apply {
             navigatorProvider.addNavigator(ComposeNavigator())
         }
     }
-
-    lateinit var navController: NavHostController
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
@@ -229,6 +233,38 @@ class LazyColumnTest {
     // hàm test nhấn vào phần tử
     @Test
     fun givenSongList_whenSongClick_thenShowSongDetails() {
+        composeTestRule.setContent {
+            NavHost(
+                navController = navController,
+                startDestination = "home"
+            ) {
+                composable("home") {
+                    showSongList(
+                        fakeData,
+                        navController = navController
+                    )
+                }
 
+                composable("details/{id}") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag("detail_screen")
+                    )
+                }
+            }
+        }
+
+        // LazyColumn hiển thị
+        composeTestRule
+            .onNodeWithTag("SongItem_2")
+            .assertExists()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("detail_screen")
+            .assertIsDisplayed()
     }
 }
