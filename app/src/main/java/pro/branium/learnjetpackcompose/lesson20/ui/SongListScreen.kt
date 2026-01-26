@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -235,21 +236,8 @@ fun SongListScreen(
                     }
 
                     is ApiResult.Success -> { // success
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            val songs = (songResult as ApiResult.Success<List<Song>>).data
-                            items(
-                                count = songs.size,
-                                key = { index -> songs[index].id }
-                            ) { index ->
-                                val song = songs[index]
-                                SongItem(song, navController)
-                                if (index < songs.size - 1) {
-                                    HorizontalDivider()
-                                }
-                            }
-                        }
+                        val songs = (songResult as ApiResult.Success<List<Song>>).data
+                        showSongList(songs, navController)
                     }
 
                     is ApiResult.Error -> { // error
@@ -291,6 +279,29 @@ fun SongListScreen(
 //                    }
 //                }
 //            }
+            }
+        }
+    }
+}
+
+@Composable
+fun showSongList(
+    songs: List<Song> = emptyList(),
+    navController: NavController
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("song_list")
+    ) {
+        items(
+            count = songs.size,
+            key = { index -> songs[index].id }
+        ) { index ->
+            val song = songs[index]
+            SongItem(song, navController)
+            if (index < songs.size - 1) {
+                HorizontalDivider()
             }
         }
     }
@@ -365,7 +376,9 @@ fun SongItem(song: Song, navController: NavController) {
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable {
                 navController.navigate("details/${song.id}")
-            }) {
+            }
+            .testTag("SongItem_${song.id}")
+    ) {
         AsyncImage(
             modifier = Modifier
                 .size(64.dp)
