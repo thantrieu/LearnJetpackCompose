@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.service)
 }
 
 android {
@@ -71,11 +72,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // for media3
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-session:1.3.1")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
 
     // media style:
-    implementation("androidx.media:media:1.7.0")
+    implementation(libs.androidx.media)
 
     implementation(libs.gson)
     implementation(libs.retrofit)
@@ -94,9 +95,16 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
+    // for firebase
+    implementation(platform(libs.google.firebase.bom))
+    // Thư viện Cloud Firestore
+    implementation(libs.firebase.firestore)
+    // Nếu bạn muốn dùng các tính năng Kotlin Coroutines (ngon hơn callback truyền thống)
+    implementation(libs.kotlinx.coroutines.play.services)
+
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.android)
-    testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation(libs.mockito.inline)
     testImplementation(libs.kotlinx.coroutines.test)
 
     testImplementation(libs.junit)
@@ -106,5 +114,5 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    androidTestImplementation("androidx.navigation:navigation-testing:2.7.7")
+    androidTestImplementation(libs.androidx.navigation.testing)
 }
