@@ -14,6 +14,7 @@ import pro.branium.learnjetpackcompose.lesson20.navigation.AppNavigation
 import pro.branium.learnjetpackcompose.lesson20.ui.SongListScreen
 import pro.branium.learnjetpackcompose.lesson20.viewmodel.ThemeViewModel
 import pro.branium.learnjetpackcompose.lesson33.FireStoreSample
+import pro.branium.learnjetpackcompose.lesson34.FireStoreOperations
 import pro.branium.learnjetpackcompose.ui.theme.AppTheme
 
 @AndroidEntryPoint
@@ -23,7 +24,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
-                FireStoreSample()
+                FireStoreOperations()
             }
         }
 //        val lifecycleOwner = this
