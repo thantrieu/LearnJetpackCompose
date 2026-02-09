@@ -101,6 +101,11 @@ dependencies {
     implementation(libs.firebase.firestore)
     // Nếu bạn muốn dùng các tính năng Kotlin Coroutines (ngon hơn callback truyền thống)
     implementation(libs.kotlinx.coroutines.play.services)
+    // FCM
+    implementation(libs.firebase.messaging)
+//    implementation(libs.firebase.analytics)
+//    implementation(libs.firebase.messaging.ktx)
+//    implementation(libs.firebase.analytics.ktx)
 
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.android)
