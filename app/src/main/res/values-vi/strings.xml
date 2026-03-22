@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Messenger App</string>
+    <string name="menu_item_settings">Cài đặt</string>
+    <string name="menu_item_dark_mode">Giao diện tối</string>
+    <string name="facebook_app_id">1248078443437219</string>
+    <string name="facebook_client_token">64e900e699fa94f60341418d3bfd9fcd</string>
+    <string name="fb_login_protocol_scheme">fb1248078443437219</string>
+</resources>
