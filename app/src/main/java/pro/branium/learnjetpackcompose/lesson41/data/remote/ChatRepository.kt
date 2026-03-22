@@ -14,8 +14,7 @@ class ChatRepository(
             val response = api.sendMessage(request)
             Log.e("==>", "Response: $response")
             response.success
-        } catch (e: Exception) {
-            Log.e("==>", "Error: ${e.message}")
+        } catch (_: Exception) {
             false
         }
     }
