@@ -1,4 +1,4 @@
-package pro.branium.learnjetpackcompose.lesson41.data.remote
+package pro.branium.learnjetpackcompose.lesson41.data.remote.chat
 
 data class MessageRequest(
     val senderId: String,

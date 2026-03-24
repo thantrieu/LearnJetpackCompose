@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +35,7 @@ import pro.branium.learnjetpackcompose.lesson36.WebClientID
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
 import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatScreen
 import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginScreen
+import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginViewModel
 import pro.branium.learnjetpackcompose.ui.theme.AppTheme
 
 @AndroidEntryPoint
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
     }
     private var currentUser by mutableStateOf<User?>(null)
     private lateinit var callbackManager: CallbackManager
+    private val loginViewModel: LoginViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,13 +156,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleSignIn(result: GetCredentialResponse) {
-
         val credential = result.credential
 
         if (credential is CustomCredential &&
             credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
         ) {
-
             val googleIdTokenCredential =
                 GoogleIdTokenCredential.createFrom(credential.data)
 
@@ -169,16 +170,21 @@ class MainActivity : ComponentActivity() {
             val email = googleIdTokenCredential.email ?: ""
             val avatar = googleIdTokenCredential.profilePictureUri?.toString() ?: ""
 
+            val fcmToken = getSharedPreferences("user", MODE_PRIVATE)
+                .getString("fcmToken", null)
             val userProfile = User(
-                uid = uid,
+                userId = uid,
                 fullName = fullName,
                 email = email,
                 avatarUrl = avatar,
+                fcmToken = fcmToken
             )
             currentUser = userProfile
             Log.e("==>", "User: $userProfile")
 
             saveUserLocally(email, fullName, avatar)
+
+            loginViewModel.saveUserInfo(this, userProfile)
         }
     }
 

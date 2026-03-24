@@ -1,6 +1,7 @@
-package pro.branium.learnjetpackcompose.lesson41.data.remote
+package pro.branium.learnjetpackcompose.lesson41.data.remote.chat
 
 import android.util.Log
+import pro.branium.learnjetpackcompose.lesson41.data.remote.ChatApiService
 import pro.branium.learnjetpackcompose.lesson41.data.toMessageRequest
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 

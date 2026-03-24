@@ -1,6 +1,6 @@
 package pro.branium.learnjetpackcompose.lesson41.data.remote
 
-data class MessageResponse(
+data class BaseResponse(
     val success: Boolean,
-    val message: String?
+    val errorMessage: String?
 )

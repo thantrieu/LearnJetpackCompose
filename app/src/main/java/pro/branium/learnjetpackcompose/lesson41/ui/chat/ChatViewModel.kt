@@ -5,7 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import pro.branium.learnjetpackcompose.lesson41.data.remote.ChatRepository
+import pro.branium.learnjetpackcompose.lesson41.data.remote.chat.ChatRepository
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 
 class ChatViewModel(

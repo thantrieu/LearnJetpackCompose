@@ -44,11 +44,11 @@ fun ChatScreen(
             }
             ChatInputBar(
                 onSendMessage = { dataString ->
-                    val receiverId = "108694973833202095556"
+                    val receiverId = "108694973833202095556" // nguoi nhan
                     // tin nhắn cần gửi đi
                     val message = Message(
-                        chatId = generateChatId(user.uid, receiverId),
-                        senderId = user.uid,
+                        chatId = "",
+                        senderId = user.userId,
                         receiverId = receiverId,
                         text = dataString,
                         senderName = user.fullName
@@ -87,7 +87,7 @@ fun generateChatId(userId1: String, userId2: String): String {
 fun ChatScreenPreview() {
     ChatScreen(
         user = User(
-            uid = "user001",
+            userId = "user001",
             fullName = "Branium",
             email = "",
             avatarUrl = null

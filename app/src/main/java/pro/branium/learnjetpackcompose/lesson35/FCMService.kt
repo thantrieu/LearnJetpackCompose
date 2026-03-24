@@ -8,7 +8,14 @@ class FCMService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.e("FCM_TOKEN", "token: $token")
+        saveToken(token)
+    }
+
+    private fun saveToken(token: String) {
+        getSharedPreferences("user", MODE_PRIVATE)
+            .edit()
+            .putString("fcmToken", token)
+            .apply()
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
