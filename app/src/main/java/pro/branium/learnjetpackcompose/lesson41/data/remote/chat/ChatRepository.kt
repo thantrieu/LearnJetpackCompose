@@ -4,6 +4,7 @@ import android.util.Log
 import pro.branium.learnjetpackcompose.lesson41.data.remote.ChatApiService
 import pro.branium.learnjetpackcompose.lesson41.data.toMessageRequest
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
+import pro.branium.learnjetpackcompose.lesson41.domain.model.MessagePage
 
 class ChatRepository(
     private val api: ChatApiService = ChatRetrofitClient.api
@@ -17,6 +18,32 @@ class ChatRepository(
             response.success
         } catch (_: Exception) {
             false
+        }
+    }
+
+    suspend fun getRecentMessages(
+        senderId: String,
+        receiverId: String,
+        createdAt: Long? = null
+    ): Result<MessagePage> {
+        val request = RecentMessageRequest(
+            senderId = senderId,
+            receiverId = receiverId,
+            createdAt = createdAt
+        )
+        return try {
+            val response = api.getMessages(request)
+            if (response.success) {
+                val page = MessagePage(
+                    hasMore = response.hasMore,
+                    messages = response.messages
+                )
+                Result.success(page)
+            } else {
+                Result.failure(Exception("Lỗi lấy lịch sử trò chuyện"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
