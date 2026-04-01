@@ -56,6 +56,7 @@ fun ChatScreen(
     LaunchedEffect(Unit) {
         Log.e("==>", "Load lần đầu")
         viewModel.getRecentMessages(user.userId, receiverId)
+        viewModel.getFriends(user.userId)
     }
 
     // detect scroll để load thêm

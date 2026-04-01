@@ -21,7 +21,9 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
@@ -31,9 +33,15 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import pro.branium.learnjetpackcompose.lesson36.HomeScreen
+import pro.branium.learnjetpackcompose.lesson36.UserProfile
 import pro.branium.learnjetpackcompose.lesson36.WebClientID
+import pro.branium.learnjetpackcompose.lesson41.data.local.UserLocalDataSource
+import pro.branium.learnjetpackcompose.lesson41.data.remote.user.UserRepository
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
+import pro.branium.learnjetpackcompose.lesson41.ui.FriendsList
 import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatScreen
+import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatViewModel
 import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginScreen
 import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginViewModel
 import pro.branium.learnjetpackcompose.ui.theme.AppTheme
@@ -45,20 +53,23 @@ class MainActivity : ComponentActivity() {
     }
     private var currentUser by mutableStateOf<User?>(null)
     private lateinit var callbackManager: CallbackManager
-    private val loginViewModel: LoginViewModel by viewModels()
+    private val loginViewModel: LoginViewModel by viewModels {
+        val dataSource = UserLocalDataSource(getSharedPreferences("user", MODE_PRIVATE))
+        val repository = UserRepository(localDataSource = dataSource)
+        LoginViewModel.LoginViewModelFactory(repository)
+    }
+
+    private val chatViewModel: ChatViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         askNotification()
-
         callbackManager = CallbackManager.Factory.create()
-
+        observeLoggedInUser()
         setContent {
             AppTheme {
-//                LoginScreen()
-//                FireStoreOperations()
                 if (currentUser == null) {
                     LoginScreen(
                         onLoginClick = {
@@ -69,7 +80,11 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
-                    ChatScreen(user = currentUser!!)
+//                    ChatScreen(user = currentUser!!)
+                    currentUser?.userId?.let {
+                        chatViewModel.getFriends(it)
+                        FriendsList(chatViewModel)
+                    }
                 }
             }
         }
@@ -88,6 +103,18 @@ class MainActivity : ComponentActivity() {
 //            AppTheme(darkTheme = isDarkTheme, dynamicColor = false) {
 //                AppNavigation(isDarkTheme, onDarkThemeChanged)
 //            }
+    }
+
+    private fun observeLoggedInUser() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                loginViewModel.loggedInUser.collect { user ->
+                    if (user != null) {
+                        currentUser = user
+                    }
+                }
+            }
+        }
     }
 
     override fun onActivityResult(
@@ -180,21 +207,9 @@ class MainActivity : ComponentActivity() {
                 fcmToken = fcmToken
             )
             currentUser = userProfile
-            Log.e("==>", "User: $userProfile")
-
-            saveUserLocally(email, fullName, avatar)
-
+            loginViewModel.saveUserLocally(userProfile)
             loginViewModel.saveUserInfo(this, userProfile)
         }
-    }
-
-    fun saveUserLocally(email: String?, name: String?, avatar: String?) {
-        getSharedPreferences("user", MODE_PRIVATE)
-            .edit()
-            .putString("email", email)
-            .putString("name", name)
-            .putString("avatar", avatar)
-            .apply()
     }
 
     private fun logout() {
