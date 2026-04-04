@@ -77,4 +77,8 @@ class ChatViewModel(
             }
         }
     }
+
+    fun getFriendById(userId: String): User? {
+        return friends.value.find { it.userId == userId }
+    }
 }

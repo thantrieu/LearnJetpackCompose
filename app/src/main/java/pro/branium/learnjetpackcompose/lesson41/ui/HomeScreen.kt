@@ -1,6 +1,7 @@
 package pro.branium.learnjetpackcompose.lesson41.ui
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,8 +32,11 @@ import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatViewModel
 // list friends
 
 @Composable
-fun FriendsList(viewModel: ChatViewModel) {
-    val friends by viewModel.friends.collectAsState()
+fun FriendsList(
+    chatViewModel: ChatViewModel,
+    onFriendClick: (String) -> Unit
+) {
+    val friends by chatViewModel.friends.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -46,7 +50,7 @@ fun FriendsList(viewModel: ChatViewModel) {
                 friends,
                 key = { _, item -> item.userId }
             ) { _, friend ->
-                FriendItem(friend = friend)
+                FriendItem(friend = friend, onFriendClick)
             }
         }
     }
@@ -56,11 +60,12 @@ fun FriendsList(viewModel: ChatViewModel) {
 // avatar, name, last message, time
 
 @Composable
-fun FriendItem(friend: User) {
+fun FriendItem(friend: User, onFriendClick: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
+            .padding(12.dp)
+            .clickable { onFriendClick(friend.userId) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Log.e("==>", "avatar url: ${friend.avatarUrl}")

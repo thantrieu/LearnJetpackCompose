@@ -33,14 +33,12 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import pro.branium.learnjetpackcompose.lesson36.HomeScreen
-import pro.branium.learnjetpackcompose.lesson36.UserProfile
 import pro.branium.learnjetpackcompose.lesson36.WebClientID
 import pro.branium.learnjetpackcompose.lesson41.data.local.UserLocalDataSource
 import pro.branium.learnjetpackcompose.lesson41.data.remote.user.UserRepository
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
+import pro.branium.learnjetpackcompose.lesson41.ui.AppNavigation
 import pro.branium.learnjetpackcompose.lesson41.ui.FriendsList
-import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatScreen
 import pro.branium.learnjetpackcompose.lesson41.ui.chat.ChatViewModel
 import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginScreen
 import pro.branium.learnjetpackcompose.lesson41.ui.login.LoginViewModel
@@ -70,22 +68,12 @@ class MainActivity : ComponentActivity() {
         observeLoggedInUser()
         setContent {
             AppTheme {
-                if (currentUser == null) {
-                    LoginScreen(
-                        onLoginClick = {
-                            loginWithFacebook(this)
-                        },
-                        onGoogleLoginClick = {
-                            signInWithGoogle()
-                        }
-                    )
-                } else {
-//                    ChatScreen(user = currentUser!!)
-                    currentUser?.userId?.let {
-                        chatViewModel.getFriends(it)
-                        FriendsList(chatViewModel)
-                    }
-                }
+                AppNavigation(
+                    currentUser,
+                    chatViewModel = chatViewModel,
+                    loginWithFacebook = { loginWithFacebook(this) },
+                    loginWithGoogle = { signInWithGoogle() },
+                )
             }
         }
 //        val lifecycleOwner = this

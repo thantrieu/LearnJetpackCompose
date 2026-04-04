@@ -19,9 +19,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,27 +43,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    user: User
+    sender: User,
+    receiver: User,
+    navController: NavController
 ) {
     val viewModel: ChatViewModel = viewModel()
     val context = LocalContext.current
     val chatUiState by viewModel.chatUiState.collectAsState()
     val listState = rememberLazyListState()
 
-//    val receiverId = "108694973833202095556"
-    val receiverId = "106700342328425688585"
-
     // load lần đầu
     LaunchedEffect(Unit) {
         Log.e("==>", "Load lần đầu")
-        viewModel.getRecentMessages(user.userId, receiverId)
-        viewModel.getFriends(user.userId)
+        viewModel.getRecentMessages(sender.userId, receiver.userId)
+        viewModel.getFriends(sender.userId)
     }
 
     // detect scroll để load thêm
@@ -68,46 +76,71 @@ fun ChatScreen(
             val total = chatUiState.messages.size
             val lastMessage = chatUiState.messages.lastOrNull()
             if (lastVisibleIndex != null && lastVisibleIndex >= total - 5) {
-                viewModel.getRecentMessages(user.userId, receiverId, lastMessage?.createdAt)
+                viewModel.getRecentMessages(sender.userId, receiver.userId, lastMessage?.createdAt)
             }
         }
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = receiver.fullName)
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                reverseLayout = true,
-                contentPadding = PaddingValues(8.dp)
-            ) {
-                Log.e("==>", "Message size: ${chatUiState.messages.size}")
-                itemsIndexed(
-                    chatUiState.messages,
-                    key = { _, item -> item.messageId }
-                ) { _, message ->
-                    MessageItem(
-                        message = message,
-                        isMe = message.senderId == user.userId,
-                        receiverAvatar = ""
-                    )
+            if (chatUiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-
-                if (chatUiState.isLoading) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
+            } else if (chatUiState.error == null) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    reverseLayout = true,
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    itemsIndexed(
+                        chatUiState.messages,
+                        key = { _, item -> item.messageId }
+                    ) { _, message ->
+                        MessageItem(
+                            message = message,
+                            isMe = message.senderId == sender.userId,
+                            receiverAvatar = ""
+                        )
                     }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "${chatUiState.error}")
                 }
             }
 
@@ -115,10 +148,10 @@ fun ChatScreen(
                 onSendMessage = { dataString ->
                     val message = Message(
                         messageId = "",
-                        senderId = user.userId,
-                        receiverId = receiverId,
+                        senderId = sender.userId,
+                        receiverId = receiver.userId,
                         text = dataString,
-                        senderName = user.fullName
+                        senderName = sender.fullName
                     )
 
                     viewModel.sendMessage(context = context, message)
@@ -227,17 +260,4 @@ fun BubbleTail(isMe: Boolean) {
             color = if (isMe) Color(0xFF0084FF) else Color(0xFFE5E5EA)
         )
     }
-}
-
-@Preview
-@Composable
-fun ChatScreenPreview() {
-    ChatScreen(
-        user = User(
-            userId = "user001",
-            fullName = "Branium",
-            email = "",
-            avatarUrl = null
-        )
-    )
 }
