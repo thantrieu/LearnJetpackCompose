@@ -47,6 +47,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
+import pro.branium.learnjetpackcompose.lesson41.service.MessageEventBus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +79,12 @@ fun ChatScreen(
             if (lastVisibleIndex != null && lastVisibleIndex >= total - 5) {
                 viewModel.getRecentMessages(sender.userId, receiver.userId, lastMessage?.createdAt)
             }
+        }
+    }
+
+    LaunchedEffect(chatUiState.messages.size) {
+        if (chatUiState.messages.isNotEmpty()) {
+            listState.animateScrollToItem(0)
         }
     }
 
@@ -126,7 +133,7 @@ fun ChatScreen(
                 ) {
                     itemsIndexed(
                         chatUiState.messages,
-                        key = { _, item -> item.messageId }
+                        key = { _, item -> item.createdAt }
                     ) { _, message ->
                         MessageItem(
                             message = message,
@@ -151,7 +158,10 @@ fun ChatScreen(
                         senderId = sender.userId,
                         receiverId = receiver.userId,
                         text = dataString,
-                        senderName = sender.fullName
+                        senderName = sender.fullName,
+                        isRead = false,
+                        createdAt = System.currentTimeMillis(),
+                        attachmentUrl = null
                     )
 
                     viewModel.sendMessage(context = context, message)

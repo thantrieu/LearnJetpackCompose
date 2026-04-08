@@ -12,6 +12,7 @@ import pro.branium.learnjetpackcompose.lesson41.data.remote.chat.ChatRepository
 import pro.branium.learnjetpackcompose.lesson41.data.remote.user.FriendRepository
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
+import pro.branium.learnjetpackcompose.lesson41.service.MessageEventBus
 
 class ChatViewModel(
     private val repository: ChatRepository = ChatRepository(),
@@ -29,10 +30,30 @@ class ChatViewModel(
         _chatUiState.value = _chatUiState.value.copy(
             isLoading = true
         )
+        observeNewMessage()
+    }
+
+    private fun observeNewMessage() {
+        viewModelScope.launch {
+            MessageEventBus.newMessage.collect { newMessage ->
+                val messages = _chatUiState.value.messages.toMutableList()
+                messages.add(newMessage)
+                messages.sortBy { it.createdAt }
+                messages.reverse()
+                _chatUiState.value = _chatUiState.value.copy(messages = messages)
+            }
+        }
     }
 
     fun sendMessage(context: Context, message: Message) {
         viewModelScope.launch {
+            val messages = _chatUiState.value.messages.toMutableList()
+            messages.add(message)
+            messages.sortBy { it.createdAt }
+            messages.reverse()
+            _chatUiState.value = _chatUiState.value.copy(
+                messages = messages
+            )
             val success = repository.sendChatMessage(message)
             if (success) {
                 Toast.makeText(context, "Gửi tin nhắn thành công", Toast.LENGTH_SHORT).show()

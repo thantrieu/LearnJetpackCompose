@@ -20,7 +20,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LearnJetpackCompose">
         <service
-            android:name=".lesson35.FCMService"
+            android:name=".lesson41.service.FCMService"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
