@@ -123,6 +123,11 @@ dependencies {
     // login with facebook
     implementation(libs.facebook.login)
 
+    // lưu storage firebase
+//    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-storage:22.0.1")
+    implementation("de.huxhorn.sulky:de.huxhorn.sulky.ulid:8.3.0")
+
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.android)
     testImplementation(libs.mockito.inline)

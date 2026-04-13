@@ -1,6 +1,10 @@
 package pro.branium.learnjetpackcompose.lesson41.ui.chat
 
-import android.util.Log
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,11 +26,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,21 +38,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.request.ImageRequest
+import com.google.firebase.storage.FirebaseStorage
 import pro.branium.learnjetpackcompose.lesson41.domain.model.Message
 import pro.branium.learnjetpackcompose.lesson41.domain.model.User
-import pro.branium.learnjetpackcompose.lesson41.service.MessageEventBus
+import pro.branium.learnjetpackcompose.lesson41.ui.extensions.getExtensionFromMime
+import pro.branium.learnjetpackcompose.lesson41.ui.extensions.getMimeType
+import pro.branium.learnjetpackcompose.lesson41.ui.extensions.resolveAttachmentType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,30 +76,96 @@ fun ChatScreen(
     val chatUiState by viewModel.chatUiState.collectAsState()
     val listState = rememberLazyListState()
 
-    // load lần đầu
+    var selectedAttachment by remember { mutableStateOf<Uri?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    // Load lần đầu
     LaunchedEffect(Unit) {
-        Log.e("==>", "Load lần đầu")
         viewModel.getRecentMessages(sender.userId, receiver.userId)
         viewModel.getFriends(sender.userId)
     }
 
-    // detect scroll để load thêm
+    // Load thêm khi scroll
     LaunchedEffect(listState) {
-        Log.e("==>", "Detect scroll")
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
         }.collect { lastVisibleIndex ->
             val total = chatUiState.messages.size
             val lastMessage = chatUiState.messages.lastOrNull()
             if (lastVisibleIndex != null && lastVisibleIndex >= total - 5) {
-                viewModel.getRecentMessages(sender.userId, receiver.userId, lastMessage?.createdAt)
+                viewModel.getRecentMessages(
+                    sender.userId,
+                    receiver.userId,
+                    lastMessage?.createdAt
+                )
             }
         }
     }
 
+    // Auto scroll
     LaunchedEffect(chatUiState.messages.size) {
         if (chatUiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(0)
+        }
+    }
+
+    // Picker
+    val onAddAttachment = rememberAttachmentPicker { uri ->
+        selectedAttachment = uri
+    }
+
+    // Send logic
+    val onSendMessage: (String) -> Unit = { text ->
+
+        val chatId = createChatId(sender.userId, receiver.userId)
+
+        if (selectedAttachment != null) {
+            isUploading = true
+
+            uploadToFirebase(
+                context = context,
+                uri = selectedAttachment!!,
+                chatId = chatId,
+                onResult = { url, type ->
+
+                    val message = Message(
+                        messageId = "",
+                        senderId = sender.userId,
+                        receiverId = receiver.userId,
+                        text = text,
+                        senderName = sender.fullName,
+                        isRead = false,
+                        createdAt = System.currentTimeMillis(),
+                        attachmentUrl = url,
+                        attachmentType = type
+                    )
+
+                    viewModel.sendMessage(context, message)
+
+                    selectedAttachment = null
+                    isUploading = false
+                },
+                onError = {
+                    it.printStackTrace()
+                    isUploading = false
+                }
+            )
+
+        } else {
+
+            val message = Message(
+                messageId = "",
+                senderId = sender.userId,
+                receiverId = receiver.userId,
+                text = text,
+                senderName = sender.fullName,
+                isRead = false,
+                createdAt = System.currentTimeMillis(),
+                attachmentUrl = null,
+                attachmentType = null
+            )
+
+            viewModel.sendMessage(context, message)
         }
     }
 
@@ -92,41 +173,32 @@ fun ChatScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = {
-                    Text(text = receiver.fullName)
-                },
+                title = { Text(receiver.fullName) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                    IconButton({ navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
             )
         }
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+
             if (chatUiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
-            } else if (chatUiState.error == null) {
+            } else {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .fillMaxHeight()
                         .weight(1f),
                     reverseLayout = true,
                     contentPadding = PaddingValues(8.dp)
@@ -142,35 +214,103 @@ fun ChatScreen(
                         )
                     }
                 }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "${chatUiState.error}")
-                }
+            }
+
+            selectedAttachment?.let { uri ->
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(8.dp)
+                )
+            }
+
+            // 🔥 Upload loading
+            if (isUploading) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
             }
 
             ChatInputBar(
-                onSendMessage = { dataString ->
-                    val message = Message(
-                        messageId = "",
-                        senderId = sender.userId,
-                        receiverId = receiver.userId,
-                        text = dataString,
-                        senderName = sender.fullName,
-                        isRead = false,
-                        createdAt = System.currentTimeMillis(),
-                        attachmentUrl = null
-                    )
-
-                    viewModel.sendMessage(context = context, message)
-                },
-                onAddAttachment = { },
-                onTakePhoto = { }
+                onSendMessage = onSendMessage,
+                onAddAttachment = onAddAttachment,
+                onTakePhoto = {}
             )
         }
     }
+}
+
+@Composable
+fun rememberAttachmentPicker(
+    onPicked: (Uri) -> Unit
+): () -> Unit {
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let(onPicked)
+    }
+
+    return {
+        launcher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
+}
+
+
+/**
+ * Hàm tạo chatId dựa trên senderId và receiverId.
+ * Nếu senderId <= receiverId, chatId sẽ là "$senderId_$receiverId".
+ * Nếu senderId > receiverId, chatId sẽ là "$receiverId_$senderId".
+ *
+ * @param senderId Id của người gửi.
+ * @param receiverId Id của người nhận.
+ *
+ * @return Chuỗi chatId.
+ */
+private fun createChatId(senderId: String, receiverId: String): String {
+    return if (senderId <= receiverId) {
+        "${senderId}_${receiverId}"
+    } else {
+        "${receiverId}_${senderId}"
+    }
+}
+
+fun uploadToFirebase(
+    context: Context,
+    uri: Uri,
+    chatId: String,
+    onResult: (url: String, type: String) -> Unit,
+    onError: (Exception) -> Unit
+) {
+    val mimeType = getMimeType(context, uri)
+    val type = resolveAttachmentType(mimeType)
+
+    val ulid = de.huxhorn.sulky.ulid.ULID().nextULID()
+    val extension = getExtensionFromMime(mimeType)
+
+    val folder = when (type) {
+        "image" -> "images"
+        "video" -> "videos"
+        else -> "others"
+    }
+
+    val path = "$folder/$chatId/$ulid.$extension"
+
+    val storageRef = FirebaseStorage.getInstance().reference.child(path)
+
+    storageRef.putFile(uri)
+        .continueWithTask { task ->
+            if (!task.isSuccessful) throw task.exception!!
+            storageRef.downloadUrl
+        }
+        .addOnSuccessListener { downloadUri ->
+            onResult(downloadUri.toString(), type)
+        }
+        .addOnFailureListener {
+            onError(it)
+        }
 }
 
 @Composable
@@ -202,7 +342,9 @@ fun MessageItem(
 
         ChatBubble(
             text = message.text,
-            isMe = isMe
+            isMe = isMe,
+            attachmentUrl = message.attachmentUrl,
+            attachmentType = message.attachmentType
         )
     }
 }
@@ -210,7 +352,9 @@ fun MessageItem(
 @Composable
 fun ChatBubble(
     text: String,
-    isMe: Boolean
+    isMe: Boolean,
+    attachmentUrl: String?,
+    attachmentType: String?
 ) {
     val bubbleColor = if (isMe) Color(0xFF0084FF) else Color(0xFFE5E5EA)
     val textColor = if (isMe) Color.White else Color.Black
@@ -221,7 +365,7 @@ fun ChatBubble(
             BubbleTail(isMe = false)
         }
 
-        Box(
+        Column(
             modifier = Modifier
                 .background(
                     color = bubbleColor,
@@ -232,12 +376,82 @@ fun ChatBubble(
                         bottomEnd = if (isMe) 4.dp else 16.dp
                     )
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(4.dp)
         ) {
-            Text(
-                text = text,
-                color = textColor
-            )
+            // 🔥 1. Hiển thị ảnh nếu có
+            if (attachmentUrl != null && attachmentType == "image") {
+                /**
+                 * AsyncImage(
+                 *     model = ImageRequest.Builder(LocalContext.current)
+                 *         .data(attachmentUrl)
+                 *         .crossfade(true)
+                 *         .build(),
+                 *     contentDescription = null,
+                 *     placeholder = painterResource(R.drawable.placeholder),
+                 *     error = painterResource(R.drawable.image_error),
+                 *     modifier = Modifier
+                 *         .size(200.dp)
+                 *         .clip(RoundedCornerShape(12.dp)),
+                 *     contentScale = ContentScale.Crop
+                 * )
+                 */
+
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(attachmentUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                ) {
+                    when (painter.state) {
+
+                        is AsyncImagePainter.State.Loading -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.LightGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        is AsyncImagePainter.State.Error -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Gray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Image error", color = Color.White)
+                            }
+                        }
+
+                        else -> {
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                }
+            }
+
+            // 🔥 2. Hiển thị text nếu có
+            if (text.isNotBlank()) {
+                Text(
+                    text = text,
+                    color = textColor,
+                    modifier = Modifier.padding(
+                        horizontal = 8.dp,
+                        vertical = if (attachmentUrl != null) 4.dp else 8.dp
+                    )
+                )
+            }
         }
 
         if (isMe) {

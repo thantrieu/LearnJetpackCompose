@@ -8,5 +8,6 @@ data class Message(
     val senderName: String,
     val isRead: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val attachmentUrl: String? = null
+    val attachmentUrl: String? = null,
+    val attachmentType: String? = null,
 )
