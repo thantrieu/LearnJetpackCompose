@@ -32,6 +32,11 @@ import com.facebook.login.LoginResult
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import pro.branium.learnjetpackcompose.lesson36.WebClientID
 import pro.branium.learnjetpackcompose.lesson41.data.local.UserLocalDataSource
@@ -59,6 +64,9 @@ class MainActivity : ComponentActivity() {
 
     private val chatViewModel: ChatViewModel by viewModels()
 
+    private val _navigationEvent = MutableSharedFlow<ChatNavigation?>(1)
+    val navigationEvent = _navigationEvent.asSharedFlow()
+
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,26 +79,31 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     currentUser,
                     chatViewModel = chatViewModel,
+                    navigationEvent = navigationEvent,
                     loginWithFacebook = { loginWithFacebook(this) },
                     loginWithGoogle = { signInWithGoogle() },
                 )
             }
         }
-//        val lifecycleOwner = this
-//        setContent {
-//            val themeViewModel: ThemeViewModel = hiltViewModel()
-//
-//            val isDarkTheme by remember(themeViewModel.isDarkMode, lifecycleOwner) {
-//                themeViewModel.isDarkMode.flowWithLifecycle(lifecycleOwner.lifecycle)
-//            }.collectAsState(initial = false) // initial = false hoặc isSystemInDarkTheme()
-//
-//            val onDarkThemeChanged: (Boolean) -> Unit = { newStatus ->
-//                themeViewModel.setDarkMode(newStatus) // LƯU VÀO DATASTORE
-//            }
-//
-//            AppTheme(darkTheme = isDarkTheme, dynamicColor = false) {
-//                AppNavigation(isDarkTheme, onDarkThemeChanged)
-//            }
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        intent?.extras?.let {
+            if (it.getString("type") == "chat_message") {
+                val senderId = it.getString("senderId")
+                val receiverId = it.getString("receiverId")
+
+                lifecycleScope.launch {
+                    _navigationEvent.emit(ChatNavigation(senderId, receiverId))
+                }
+            }
+        }
     }
 
     private fun observeLoggedInUser() {
@@ -216,4 +229,9 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    data class ChatNavigation(
+        val senderId: String?,
+        val receiverId: String?
+    )
 }

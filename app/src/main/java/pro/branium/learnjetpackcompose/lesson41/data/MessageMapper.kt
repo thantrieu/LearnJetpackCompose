@@ -8,5 +8,7 @@ fun Message.toMessageRequest(): MessageRequest {
         senderId = senderId,
         receiverId = receiverId,
         text = text,
+        attachmentUrl = attachmentUrl,
+        attachmentType = attachmentType
     )
 }

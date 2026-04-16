@@ -33,6 +33,7 @@ class FCMService : FirebaseMessagingService() {
         val isRead = message.data["isRead"] == "true"
         val createdAt = message.data["createdAt"]?.toLong() ?: System.currentTimeMillis()
         val attachmentUrl = message.data["attachmentUrl"]
+        val attachmentType = message.data["attachmentType"]
 
         val newMessage = Message(
             messageId,
@@ -42,17 +43,13 @@ class FCMService : FirebaseMessagingService() {
             senderName,
             isRead,
             createdAt,
-            attachmentUrl
+            attachmentUrl,
+            attachmentType,
         )
 
         CoroutineScope(Dispatchers.IO).launch {
             MessageEventBus.emitNewMessage(newMessage)
         }
-        Log.e("==>", newMessage.toString())
-
-//        Log.d("FCMService", "data: ${message.data}")
-//        Log.d("FCMService", "sender: ${message.notification?.title}")
-//        Log.d("FCMService", "imageUrl: ${message.notification?.imageUrl}")
-//        Log.d("FCMService", "content: ${message.notification?.body}")
+        Log.e("==>", "New message: $newMessage")
     }
 }

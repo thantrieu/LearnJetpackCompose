@@ -1,10 +1,12 @@
 package pro.branium.learnjetpackcompose.lesson41.ui.chat
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Send
@@ -12,30 +14,36 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatInputBar(
     onSendMessage: (String) -> Unit,
     onAddAttachment: () -> Unit,
-    onTakePhoto: () -> Unit
+    onTakePhoto: () -> Unit,
+    hasAttachment: Boolean
 ) {
     var textState by remember { mutableStateOf("") }
 
     // Màu sắc chủ đạo (có thể thay đổi tùy theo theme ứng dụng)
     val primaryColor = MaterialTheme.colorScheme.primary
     val containerColor = MaterialTheme.colorScheme.surfaceVariant // Màu nền nhẹ cho ô nhập
+    val canSend = textState.isNotBlank() || hasAttachment
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp, // Tạo shadow nhẹ phân biệt với nội dung chat
         modifier = Modifier.fillMaxWidth()
+            .navigationBarsPadding()
+            .imePadding()
     ) {
         Row(
             modifier = Modifier
@@ -114,7 +122,7 @@ fun ChatInputBar(
 
             FilledIconButton(
                 onClick = {
-                    if (textState.isNotBlank()) {
+                    if (canSend) {
                         onSendMessage(textState)
                         textState = "" // Xóa nội dung sau khi gửi
                     }
@@ -125,10 +133,10 @@ fun ChatInputBar(
                     containerColor = primaryColor,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                enabled = textState.isNotBlank() // Chỉ bật khi có text
+                enabled = canSend
             ) {
                 Icon(
-                    imageVector = Icons.Default.Send,
+                    imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Gửi tin nhắn",
                     // Xoay icon gửi một chút cho đẹp mắt
                     modifier = Modifier.padding(start = 2.dp)
@@ -144,6 +152,7 @@ fun ChatInputBarPreview() {
     ChatInputBar(
         {},
         {},
-        {}
+        {},
+        false
     )
 }

@@ -15,7 +15,7 @@ class ChatRepository(
         return try {
             val response = api.sendMessage(request)
             Log.e("==>", "Response: $response")
-            response.success
+            response.status == "Success" || response.messageId != null || response.error == null
         } catch (_: Exception) {
             false
         }
@@ -33,6 +33,7 @@ class ChatRepository(
         )
         return try {
             val response = api.getMessages(request)
+            Log.e("==>", "Response: $response")
             if (response.success) {
                 val page = MessagePage(
                     hasMore = response.hasMore,

@@ -100,6 +100,7 @@ class ChatViewModel(
     }
 
     fun getFriendById(userId: String): User? {
+        Log.e("==>", "friends: ${friends.value}")
         return friends.value.find { it.userId == userId }
     }
 }
